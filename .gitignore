@@ -3,6 +3,8 @@
 *.out
 *.aux
 *.bcf
+*.bbl
+*.blg
 *.nav
 *.run.xml
 *.snm
