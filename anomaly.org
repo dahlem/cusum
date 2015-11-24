@@ -337,7 +337,7 @@ exportPattern( "." )
   - \faGithub :: http://github.com/dahlem
   - \faTwitter :: @dahlemd
  
-** Anomaly Detection
+** Anomaly Creation
   :PROPERTIES:
   :BEAMER_OPT: fragile
   :END:
