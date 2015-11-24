@@ -1,0 +1,865 @@
+# -*- org-export-babel-evaluate: nil -*- 
+# -*- org-confirm-babel-evaluate: nil -*- 
+#+TITLE:     An Introduction into Anomaly Detection Using CUSUM
+#+AUTHOR:    Dominik Dahlem
+#+EMAIL:     dominik.dahlem@boxever.com
+#+DATE:      2015-11-24 Tue
+#+LANGUAGE:  en
+#+STARTUP: beamer
+#+STARTUP: oddeven
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+OPTIONS: H:2 toc:t
+#+OPTIONS: TeX:t LaTeX:t
+#+LaTeX_CLASS: beamer
+#+LaTeX_CLASS_OPTIONS: [bigger]
+#+LaTeX_HEADER: \titlegraphic{\includegraphics[width=1.25cm]{images/Boxever_logo_icon.png}}
+#+LaTeX_HEADER: \usemintedstyle{trac}
+#+LaTeX_HEADER: \usepackage{float}
+#+LaTeX_HEADER: \usepackage{amssymb,amsmath}
+#+LaTeX_HEADER: \newtheorem*{remark}{Remark}
+#+LaTeX_HEADER: \usepackage{hyperref}
+#+LaTeX_HEADER: \usepackage{array}
+#+LaTeX_HEADER: \usepackage{caption}
+#+LaTeX_HEADER: \usepackage{subcaption}
+#+LaTeX_HEADER: \usepackage{booktabs}
+#+LaTeX_HEADER: \usepackage{helvet}
+#+LaTeX_HEADER: \usepackage{fontspec,fontawesome}
+#+LaTeX_HEADER: \renewcommand{\familydefault}{\sfdefault}
+#+LaTeX_HEADER: \usefonttheme{professionalfonts}
+#+LaTeX_HEADER: \usepackage{scalefnt}
+#+LaTeX_HEADER: \usepackage[T1,euler-hat-accent]{eulervm}
+#+LaTeX_HEADER: \providecommand{\abs}[1]{\lvert#1\rvert}
+#+LaTeX_HEADER: \providecommand{\norm}[1]{\lVert#1\rVert}
+#+LaTeX_HEADER: \DeclareMathOperator*{\argmax}{arg\,max}
+#+LaTeX_HEADER: \DeclareMathOperator*{\argmin}{arg\,min}
+#+LaTeX_HEADER: \DeclareMathOperator{\Tr}{Tr}
+#+LaTeX_HEADER: \DeclareMathOperator{\length}{length}
+#+LaTeX_HEADER: \DeclareMathOperator{\enqueue}{enqueue}
+#+LaTeX_HEADER: \DeclareMathOperator{\pop}{pop}
+#+LaTeX_HEADER: \DeclareMathOperator{\dequeue}{dequeue}
+#+LaTeX_HEADER: \DeclareMathOperator{\push}{push}
+#+LaTeX_HEADER: \DeclareMathOperator{\adj}{adj}
+#+LaTeX_HEADER: \DeclareMathOperator{\append}{append}
+#+LaTeX_HEADER: \DeclareMathOperator{\cov}{cov}
+#+LaTeX_HEADER: \DeclareMathOperator{\conf}{conf}
+#+LaTeX_HEADER: \DeclareMathOperator{\supp}{supp}
+#+LaTeX_HEADER: \DeclareMathOperator{\lift}{lift}
+#+LaTeX_HEADER: \DeclareMathOperator{\conv}{conv}
+#+LaTeX_HEADER: \DeclareMathOperator{\lcs}{lcs}
+#+LaTeX_HEADER: \usepackage[backend=biber,style=authoryear,sorting=ynt,minnames=3,autocite=footnote,refsection=none]{biblatex}
+#+LaTeX_HEADER: \bibliography{ddahlem.bib}
+#+LaTeX_HEADER: \DeclareFieldFormat{url}{}
+#+LaTeX_HEADER: \DeclareFieldFormat{doi}{}
+#+LaTeX_HEADER: \DeclareFieldFormat{issn}{}
+#+LaTeX_HEADER: \DeclareFieldFormat{isbn}{}
+#+LaTeX_HEADER: \DeclareFieldFormat{editor}{}
+#+LaTeX_HEADER: \DeclareFieldFormat{publisher}{}
+#+LaTeX_HEADER: \DeclareFieldFormat{page}{}
+#+LaTeX_HEADER: \DeclareFieldFormat{location}{}
+#+LaTeX_HEADER: \renewcommand{\footnotesize}{\tiny}
+#+LaTeX_HEADER: \definecolor{blue1}{RGB}{85,157,223}
+#+LaTeX_HEADER: \definecolor{blue2}{RGB}{94,169,208}
+#+LaTeX_HEADER: \definecolor{blue4}{RGB}{189,221,236}
+#+LaTeX_HEADER: \definecolor{darkblue1}{RGB}{59,68,85}
+#+LaTeX_HEADER: \definecolor{darkblue2}{RGB}{64,73,91}
+#+LaTeX_HEADER: \definecolor{grey1}{RGB}{59,68,85}
+#+LaTeX_HEADER: \definecolor{grey2}{RGB}{64,73,91}
+#+LaTeX_HEADER: \definecolor{grey5}{RGB}{237,237,237}
+#+LaTeX_HEADER: \definecolor{red1}{RGB}{221,74,44}
+#+LaTeX_HEADER: \definecolor{red2}{RGB}{236,85,46}
+#+LaTeX_HEADER: \definecolor{red3}{RGB}{243,116,93}
+#+LaTeX_HEADER: \definecolor{orange1}{RGB}{240,173,77}
+#+LaTeX_HEADER: \mode<presentation>
+#+LaTeX_HEADER: {
+#+LaTeX_HEADER:   %%%%% beamer theme start
+#+LaTeX_HEADER:   \useinnertheme{circles}
+#+LaTeX_HEADER:   \useoutertheme{infolines}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   % outer theme adjustments
+#+LaTeX_HEADER:   \setbeamertemplate{headline} { \leavevmode%
+#+LaTeX_HEADER:     \hbox{%
+#+LaTeX_HEADER:       \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,right]{section in head/foot}%
+#+LaTeX_HEADER:         \usebeamerfont{section in head/foot}\insertsectionhead\hspace*{2ex}
+#+LaTeX_HEADER:       \end{beamercolorbox}%
+#+LaTeX_HEADER:       \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,left]{section in head/foot}%
+#+LaTeX_HEADER:         \usebeamerfont{subsection in head/foot}\ifx\insertsubsectionhead\@undefined\else{}\fi
+#+LaTeX_HEADER:         \insertsubsectionhead\hspace*{2ex}
+#+LaTeX_HEADER:       \end{beamercolorbox}}%
+#+LaTeX_HEADER:     \vskip0pt%
+#+LaTeX_HEADER:     \color{orange1}\hrule }
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \setbeamertemplate{footline} {}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \usecolortheme{dolphin}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \setbeamercolor{structure}{fg=darkblue1}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   % bright
+#+LaTeX_HEADER:   \setbeamercolor*{palette primary}{fg=darkblue1,bg=grey5}
+#+LaTeX_HEADER:   \setbeamercolor*{palette secondary}{fg=darkblue2,bg=grey5}
+#+LaTeX_HEADER:   \setbeamercolor*{palette tertiary}{fg=blue1,bg=grey5}
+#+LaTeX_HEADER:   \setbeamercolor*{palette quaternary}{fg=blue2,bg=grey5}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \setbeamercolor*{normal text}{fg=darkblue1}
+#+LaTeX_HEADER:   \setbeamercolor*{alerted text}{fg=red1}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \setbeamercolor{itemize item}{fg=blue1}
+#+LaTeX_HEADER:   \setbeamercolor{itemize subitem}{fg=blue1}
+#+LaTeX_HEADER:   \setbeamercolor{itemize subsubitem}{fg=blue1}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \setbeamercolor*{sidebar}{use=structure,bg=structure.fg}
+#+LaTeX_HEADER:   \setbeamercolor*{palette sidebar primary}{use=structure,fg=structure.fg!10}
+#+LaTeX_HEADER:   \setbeamercolor*{palette sidebar secondary}{fg=white}
+#+LaTeX_HEADER:   \setbeamercolor*{palette sidebar tertiary}{use=structure,fg=structure.fg!50} 
+#+LaTeX_HEADER:   \setbeamercolor*{palette sidebar quaternary}{fg=white}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \setbeamercolor*{titlelike}{fg=blue1}
+#+LaTeX_HEADER:   
+#+LaTeX_HEADER:   \setbeamertemplate{blocks}[rounded][shadow=true]
+#+LaTeX_HEADER:   \setbeamercolor{block title}{fg=blue1,bg=grey5}
+#+LaTeX_HEADER:   \setbeamercolor{block body}{parent=normal text,use=block title,bg=grey5}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \setbeamercolor*{separation line}{}
+#+LaTeX_HEADER:   \setbeamercolor*{fine separation line}{}
+#+LaTeX_HEADER:   \setbeamercovered{transparent}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \setbeamertemplate{navigation symbols}{}
+#+LaTeX_HEADER:   %%%%% beamer theme end
+#+LaTeX_HEADER: }
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER: \AtBeginSubsection{\frame{\subsectionpage}}
+#+LaTeX_HEADER: \usepackage{animate}
+#+LaTeX_HEADER: \usepackage{pgfplots}
+#+LaTeX_HEADER: \pgfplotsset{compat=newest} 
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER: \usepgfplotslibrary{dateplot,external}
+#+LaTeX_HEADER: \usetikzlibrary{external,pgfplots.external,arrows,fadings,fit,backgrounds,matrix,positioning,petri,topaths,calc,shapes,backgrounds,shapes.multipart,decorations.pathreplacing}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER: \pgfplotsset{%
+#+LaTeX_HEADER:   legend style={
+#+LaTeX_HEADER:     font=\tiny,
+#+LaTeX_HEADER:     draw=none,
+#+LaTeX_HEADER:     fill=none,
+#+LaTeX_HEADER:     legend image code/.code={
+#+LaTeX_HEADER:       \draw[##1]
+#+LaTeX_HEADER:       plot coordinates {
+#+LaTeX_HEADER:         (0cm,0cm)
+#+LaTeX_HEADER:         (0.3cm,0cm)
+#+LaTeX_HEADER:       };%
+#+LaTeX_HEADER:     }
+#+LaTeX_HEADER:   },
+#+LaTeX_HEADER:   legend cell align=left,
+#+LaTeX_HEADER:   every axis/.append style={%
+#+LaTeX_HEADER:     width=1.75in,
+#+LaTeX_HEADER:     height=1.75in
+#+LaTeX_HEADER:   },
+#+LaTeX_HEADER:   every axis plot post/.style={
+#+LaTeX_HEADER:     line join=round
+#+LaTeX_HEADER:   },
+#+LaTeX_HEADER:   tick label style={font=\footnotesize},
+#+LaTeX_HEADER:   title style={font=\bfseries\small},
+#+LaTeX_HEADER: }
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   %% define cycle list for line plots
+#+LaTeX_HEADER:   \pgfplotscreateplotcyclelist{linelist}{%
+#+LaTeX_HEADER:       {blue1,thick},
+#+LaTeX_HEADER:       {darkblue1,thick},
+#+LaTeX_HEADER:       {red1,thick},
+#+LaTeX_HEADER:       {grey1,thick}}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   %% define cycle list for line plots
+#+LaTeX_HEADER:   \pgfplotscreateplotcyclelist{barlist}{%
+#+LaTeX_HEADER:       {blue1,fill=blue1,fill opacity=0.7,mark=none},
+#+LaTeX_HEADER:       {darkblue1,fill=darkblue1,fill opacity=0.7,mark=none},
+#+LaTeX_HEADER:       {red1,fill=red1,fill opacity=0.7,mark=none},
+#+LaTeX_HEADER:       {grey1,fill=grey1,fill opacity=0.7,mark=none}}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   %% define cycle list for mark plots
+#+LaTeX_HEADER:   \pgfplotscreateplotcyclelist{marklist}{%
+#+LaTeX_HEADER:       {blue1,thick,solid, every mark/.append style={solid, fill=blue1}, mark=*},
+#+LaTeX_HEADER:       {darkblue1,thick,solid, every mark/.append style={solid, fill=darkblue1}, mark=*},
+#+LaTeX_HEADER:       {red1,thick,solid, every mark/.append style={solid, fill=red1}, mark=*},
+#+LaTeX_HEADER:       {grey1,thick,solid, every mark/.append style={solid, fill=grey1}, mark=*}}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   %% define cycle list for box plots
+#+LaTeX_HEADER:   \pgfplotscreateplotcyclelist{boxlist}{%
+#+LaTeX_HEADER:       {blue1,thick,solid, every mark/.append style={solid, fill=blue1}, mark=*},
+#+LaTeX_HEADER:       {darkblue1,thick,solid, every mark/.append style={solid, fill=darkblue1}, mark=*},
+#+LaTeX_HEADER:      {red1,thick,solid, every mark/.append style={solid, fill=red1}, mark=*},
+#+LaTeX_HEADER:      {grey1,thick,solid, every mark/.append style={solid, fill=grey1}, mark=*}}
+#+LaTeX_HEADER:
+#+LaTeX_HEADER: \tikzstyle{titleNode}=[font=\bfseries\small]
+#+LaTeX_HEADER: \tikzstyle{every node}=[font=\scriptsize]
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER: \providecommand{\alert}[1]{\textbf{#1}}
+#+LaTeX_HEADER: 
+#+LaTeX_HEADER:   \pgfmathdeclarefunction{gauss}{3}{%
+#+LaTeX_HEADER:     \pgfmathparse{1/(#3*sqrt(2*pi))*exp(-((#1-#2)^2)/(2*#3^2))}%
+#+LaTeX_HEADER:   }
+#+LaTeX_HEADER:
+#+LaTeX_HEADER:  \pgfkeys{
+#+LaTeX_HEADER:    /tikz/on layer/.code={
+#+LaTeX_HEADER:     \pgfonlayer{#1}\begingroup
+#+LaTeX_HEADER:     \aftergroup\endpgfonlayer
+#+LaTeX_HEADER:     \aftergroup\endgroup
+#+LaTeX_HEADER:    }
+#+LaTeX_HEADER:  }
+#+LaTeX_HEADER:  \pgfplotsset{
+#+LaTeX_HEADER:    highlight/.code args={#1:#2}{
+#+LaTeX_HEADER:      \fill [every highlight] ({axis cs:#1,0}|-{rel axis cs:0,0}) rectangle ({axis cs:#2,0}|-{rel axis cs:0,1});
+#+LaTeX_HEADER:    },
+#+LaTeX_HEADER:    /tikz/every highlight/.style={
+#+LaTeX_HEADER:      on layer=\pgfkeysvalueof{/pgfplots/highlight layer},
+#+LaTeX_HEADER:      blue!20
+#+LaTeX_HEADER:    },
+#+LaTeX_HEADER:    /tikz/highlight style/.style={
+#+LaTeX_HEADER:      /tikz/every highlight/.append style=#1
+#+LaTeX_HEADER:    },
+#+LaTeX_HEADER:    highlight layer/.initial=axis background
+#+LaTeX_HEADER:  }
+#+COLUMNS: %40ITEM %10BEAMER_env(Env) %9BEAMER_envargs(Env Args) %4BEAMER_col(Col) %10BEAMER_extra(Extra)
+
+* Prequel							   :noexport:
+The documentation of the following workflow is done using org-mode
+which is an emacs package for literal programming and more. The
+workflow is documented in a serial fashion with all the scripts
+embedded. In principle it can be opened in any text editor, however,
+to see all the annotations Emacs should be used.
+
+This org file documents the entirety of the anomaly detection
+workflow. The following sections provide the source-code snippets in
+various programming languages to accomplish this.
+
+You can tangle the workflow first in order to create the R package
+structure. Before proceeding with the workflow, install the ~cusum~ R
+package:
+
+ - ~cd src/package~
+ - ~R CMD INSTALL cusum~
+
+** Variable Declarations
+You can re-run this subtree by executing
+`org-babel-execute-subtree'. Change the code below to get directories
+depending on who you are. Also, you can run the command
+`org-babel-execute-subtree' with C-c C-v s.
+
+*** Directories
+
+Let's set up the directories we will be using.
+
+#+name: baseDir
+#+BEGIN_SRC sh
+  pwd
+#+END_SRC
+
+#+RESULTS: baseDir
+: /Users/dominikdahlem/Documents/meetup/R/anomaly
+
+
+#+name: dataDir
+#+begin_src sh :var baseDir=baseDir
+echo ${baseDir}/data
+#+end_src
+
+#+RESULTS: dataDir
+: /Users/dominikdahlem/Documents/meetup/R/anomaly/data
+
+
+#+name: scriptsDir
+#+begin_src sh :var baseDir=baseDir
+echo ${baseDir}/scripts
+#+end_src
+
+#+RESULTS: scriptsDir
+: /Users/dominikdahlem/Documents/meetup/R/anomaly/scripts
+
+
+#+name: resultsDir
+#+begin_src sh :var dataDir=dataDir
+echo ${dataDir}/results
+#+end_src
+
+#+RESULTS: resultsDir
+: /Users/dominikdahlem/Documents/meetup/R/anomaly/data/results
+
+
+#+name: packageDir
+#+begin_src sh :var baseDir=baseDir
+echo ${baseDir}/src/package/cusum/R
+#+end_src
+
+#+RESULTS: packageDir
+: /Users/dominikdahlem/Documents/meetup/R/anomaly/src/package/cusum/R
+
+
+We create all directories, which we only need to do when we set up the
+project.
+
+#+BEGIN_SRC sh :var scriptsDir=scriptsDir :var resultsDir=resultsDir :var packageDir=packageDir :results none
+  mkdir -p ${scriptsDir}
+  mkdir -p ${resultsDir}
+  mkdir -p ${packageDir}
+#+END_SRC
+
+
+
+* R Package Setup						   :noexport:
+
+Let's create the package content for the cusum R package.
+
+#+BEGIN_SRC txt :tangle src/package/cusum/DESCRIPTION
+Package: cusum
+Version: 1.0
+Date: 2015-11-25
+Title: CUSUM Anomaly Detection
+Author: Dominik Dahlem <Dominik.Dahlem@gmail.com>
+Maintainer: Dominik Dahlem <Dominik.Dahlem@gmail.com>
+Depends: R (>= 3.2.2), optimx, FNN
+Description: Compute anomalies for stationary processes
+License: GPL-2
+URL: http://www.r-project.org
+#+END_SRC
+
+Since R 3.0, we also need a namespace file.
+
+#+BEGIN_SRC txt :tangle src/package/cusum/NAMESPACE
+exportPattern( "." )
+#+END_SRC
+
+* Introduction
+
+** Who am I?
+ - Dominik Dahlem, Lead Data Scientist, Boxever
+  - \faEnvelopeO :: dominik.dahlem@boxever.com
+  - \faLinkedin :: http://ie.linkedin.com/in/ddahlem
+  - \faGithub :: http://github.com/dahlem
+  - \faTwitter :: @dahlemd
+ 
+** Anomaly Detection
+  :PROPERTIES:
+  :BEAMER_OPT: fragile
+  :END:
+
+
+#+BEGIN_SRC sh :tangle scripts/exampleTS.sh :var resultsDir=resultsDir :exports none :results none
+  awk '
+    func r() {
+      PI = atan2(0, -1);
+      return sqrt(-2.0 * log(rand())) * cos(2.0 * PI * rand())
+    }
+    BEGIN {
+      total=0;
+      OFS=",";
+      for (i=0; i<500; i++) {
+        v=5.0 * r();
+        total+=v;
+        print "0-5.0", i, v, total, "0";
+      }
+      h=v*10
+      total+=h;
+      print "0-5.0", i, h, total, "0";
+      i++;
+      for (; i<525; i++) {
+        v=5.0 * r();
+        total+=v;
+        print "0-5.0", i, v, total, "0";
+      }
+      for (; i<575; i++) {
+        v=15.0 * r();
+        total+=v;
+        print "0-5.0", i, v, total, "1";
+      }
+    }' > ${resultsDir}/timeseries.csv
+  head -n 475 ${resultsDir}/timeseries.csv > ${resultsDir}/timeseries_training.csv
+  tail -n +476 ${resultsDir}/timeseries.csv > ${resultsDir}/timeseries_test.csv
+#+END_SRC
+
+\begin{center}
+  \begin{animateinline}[autoplay,loop]{2}
+    \multiframe{20}{i=475+5}{%
+      \begin{tikzpicture}
+        \begin{axis}[
+          set layers,
+	  name=ts,
+          domain=450:595,
+	  xmin=450,xmax=595,
+	  width=10cm,
+          cycle list name=linelist]
+          \addplot+[highlight style={grey5},highlight layer=axis ticks,highlight=475:526,highlight style={red3},highlight layer=axis ticks,highlight=526:574] table[col sep=comma,x index=1,y index=3] {data/results/timeseries_test.csv};
+        \end{axis}
+        \begin{axis}[
+          cycle list name=linelist,
+          domain=450:595,
+	  xmin=450,xmax=595,
+	  width=10cm,
+          samples=100,
+          at={($(ts.south)-(0cm,1cm)$)},anchor=north]
+	  \pgfmathparse{(\i < 525 ? int(1) : int(0))}
+	  \ifnum\pgfmathresult>0
+          \plot {gauss(x, \i, 5)};
+	  \else
+          \plot {gauss(x, \i, 15)};
+	  \fi
+        \end{axis}
+      \end{tikzpicture}
+    }
+  \end{animateinline}
+\end{center}
+
+
+** What is Anomaly Detection
+
+ - Find the problem before it affects businesses (especially SaaS)
+ - But what is an anomaly?
+  - rare class mining
+  - chance discovery
+  - novelty detection
+  - exception mining
+  - noise removal
+
+
+** Challenges
+
+ - What is normal behaviour...
+  - ... if normal behaviour keeps evolving?
+  - ... if the boundary  between normal and anomolous behaviour is imprecise?
+ - What are we doing with noisy data...
+  - ... if the notion of outliers differs across application domains?
+ - Availability of training data
+
+
+** Outlier Detection
+
+\begin{center}
+  \begin{tikzpicture}
+    \begin{axis}[
+      set layers,
+      name=ts,
+      width=10cm,
+      cycle list name=linelist]
+      \addplot+[highlight style={grey5},highlight layer=axis ticks,highlight=475:525] table[col sep=comma,x index=1,y index=3] {data/results/timeseries_test.csv};
+      \addplot+[only marks,red1] table[col sep=comma,x index=1,y index=3] {data/results/timeseries_outliers.csv};
+      \node[anchor=south] (source) at (axis cs:510,100){Remove???};
+      \node (destination) at (axis cs:500,-68.4725){};
+      \draw[->](source)--(destination);
+    \end{axis}
+  \end{tikzpicture}
+\end{center}
+
+#+BEGIN_SRC R -n -r -l  "#(ref:%s)" :tangle src/package/cusum/R/outliers.R :results none
+  outliers <- function(x, s) {
+      q <- quantile(x, probs=c(.25, .75), na.rm=T)
+      iqr <- q[2] - q[1]
+      idx <- which((x < (q[1]-s*iqr)) | (x > (q[2]+s*iqr)),
+                   arr.ind=T)
+      return(idx)
+  }
+#+END_SRC
+
+#+BEGIN_SRC R :tangle scripts/detectOutliers.R :var packageDir=packageDir :var resultsDir=resultsDir :exports none :results none
+  argv <- commandArgs(trailingOnly=T)
+  if(!exists("outliers", mode="function")) source(paste(packageDir, "/outliers.R", sep=""))
+  d <- read.csv(argv[1], header=F)
+  o <- outliers(d$V3, 4.0)
+  write.table(d[o,], argv[2], sep=",", quote=F, row.names=F, col.names=F)
+#+END_SRC
+
+#+BEGIN_SRC sh :tangle scripts/detectOutliers.sh :var scriptsDir=scriptsDir :var resultsDir=resultsDir :exports none :results none
+  Rscript ${scriptsDir}/detectOutliers.R ${resultsDir}/timeseries_test.csv ${resultsDir}/timeseries_outliers.csv
+#+END_SRC
+
+
+** Model-based Anomaly Detection
+  :PROPERTIES:
+  :BEAMER_OPT: fragile
+  :END:
+
+\begin{center}
+  \begin{animateinline}[autoplay,loop]{1}
+    \multiframe{21}{i=487+4}{%
+      \begin{tikzpicture}
+        \begin{axis}[
+          set layers,
+          domain=450:600,
+	  xmin=450,xmax=600,
+          name=ts,
+          width=10cm,
+          cycle list name=linelist]
+          \addplot+[highlight style={red3},highlight layer=axis ticks,highlight=500:510,highlight=526:551,highlight=553:575] table[col sep=comma,x index=1,y index=3] {data/results/timeseries_test.csv};
+        \end{axis}
+        \begin{axis}[
+          cycle list name=linelist,
+          domain=450:595,
+	  xmin=450,xmax=595,
+          ymin=0,
+	  width=10cm,
+          samples=100,
+          at={($(ts.south)-(0cm,1cm)$)},anchor=north]
+          \addplot table[col sep=comma,x expr=\thisrowno{0}+\i,y index=1] {data/results/debug/kernels_\i.csv};
+	  \addlegendentry{Model}
+          \addplot table[col sep=comma,x expr=\thisrowno{0}+\i,y index=2] {data/results/debug/kernels_\i.csv};
+	  \addlegendentry{Estimate}
+        \end{axis}
+      \end{tikzpicture}
+    }
+  \end{animateinline}
+\end{center}
+
+
+* Anomaly Detection
+
+** Some Definitions
+
+ - Let \(M_t(s_t \mid s, c)\) denote the probability of event \(s_t\) given a
+   context \(c\) of the current regime and the timeseries \(s\)
+ - Let \(T_w(s_t)\) denote the probability of event \(s_t\) of the current
+   regime over the past \(w\) observations
+  - the context \(c\) is implicit and could be day of the week, hour
+    of the day, etc.
+
+
+** The CUSUM Method\footfullcite{citeulike:13844943} (I)
+
+ - Let's use the Gaussian kernel to estimate the densities\footfullcite{citeulike:6901646}
+\begin{align}
+  \hat{T}_{w}(s_{t})=\frac{1}{w}\sum_{\ell=t-w}^{t-1}\frac{1}{\sqrt{2\pi}
+    \sigma}e^{-\frac{(s_{\ell}-s_{t})^{2}}{2\sigma^{2}}}.\label{eq:q-est}\\
+  \hat{M}(s_{t} \mid s, c)=\frac{1}{k}\sum_{\ell \in
+    \Phi(s,c)}\frac{1}{\sqrt{2\pi} \sigma}e^{-\frac{(s_{\ell}-s_{t})^{2}}{2\sigma^{2}}}\label{eq:p-est}
+\end{align}
+
+#+BEGIN_SRC R :tangle src/package/cusum/R/gauss.R :results none
+gauss <- function(st, s, sigmaSq) {
+    Z <- 1/(sqrt(2 * pi * sigmaSq))
+    bw <- 1/(2 * sigmaSq)
+    n <- length(s)
+    return(1/n * Z * sum(exp(-bw * (s - st)^2)))
+}
+#+END_SRC
+
+
+** The CUSUM Method (II)
+ - Cumulative sum of the log-likelihood ratios
+\begin{align}
+  R_{t}&=\log\left[\frac{\hat{T}_{w}(s_{t})}{\hat{M}(s_{t} \mid
+      s, c)}\right]\label{eq:logRatios}\\
+  S_{t}&=S_{t-1}+R_{t}\label{eq:cum-sum}.
+\end{align}
+ - Raise alarm if
+\begin{equation}
+  \tau=\inf\{t \mid S_{t} - \min_{0\leq k \leq t}(S_k) > \delta \}\label{eq:tau}.
+\end{equation}
+ - The cumulative sum is zero if there is no anomaly
+
+** CUSUM in R (I)
+
+
+#+BEGIN_SRC R -n -r -l "#(ref:%s)" :session cusum  :tangle src/package/cusum/R/cusum.R :results none
+cusum <- function(params, training, s) {
+    window <- params[1]                                                #(ref:window)
+    slope <- params[2]                                                 #(ref:slope)
+    df <- data.frame(t=seq(1,nrow(s)), g=rep(0, nrow(s)),
+                     R=rep(0, nrow(s)), Q=rep(0, nrow(s)),
+                     P=rep(0, nrow(s)), Sn=rep(0, nrow(s)),
+                     SnPrime=rep(0, nrow(s)), anomaly=rep(0, nrow(s)))
+
+    for (t in (2+window):nrow(s)) {                                    #(ref:overT)
+        s.subset <- s[(t-window):t,]                                   #(ref:windowedSet)
+        cs <- unique(s.subset$c)                                       #(ref:contexts)
+        training.subset <- subset(training, c %in% cs)                 #(ref:subsetTraining)
+#+END_SRC
+
+ - Lines [[(window)]] and [[(slope)]] are the tuning parameters
+ - Line [[(overT)]] steps over each time \(t\)
+ - Line [[(windowedSet)]] looks only at the last ~window~ observations
+ - Line [[(contexts)]] selects the contexts within the chosen observations
+ - Line [[(subsetTraining)]]: training set given the context(s)
+
+
+** CUSUM in R (II)
+
+#+BEGIN_SRC R -n -r -l "#(ref:%s)" :session cusum  :tangle src/package/cusum/R/cusum.R :results none
+        S <- var(training.subset$s)                                   #(ref:variance)
+        q.s <- training.subset$s[sample(length(training.subset$s),    #(ref:sampleTraining)
+                 size=window, replace=T, prob=NULL)]
+
+        df$P[t] <- gauss(s$s[t], q.s, S)                              #(ref:kernelP)
+        df$Q[t] <- gauss(s$s[t], s.subset$s, S)                       #(ref:kernelQ)
+        
+        if (df$P[t] & df$Q[t]) {
+            df$R[t] <- -log(df$P[t]) + log(df$Q[t])                   #(ref:llRatio)
+        } else {
+            df$R[t] <- 0.0
+        }
+        df$Sn[t] <- df$Sn[t-1] + df$R[t]                              #(ref:cusum)
+        df$g[t] <- max(0, df$Sn[t])                                   #(ref:cusumBound)
+#+END_SRC
+
+ - Line [[(variance)]]: variance used for the kernels
+ - Line [[(sampleTraining)]]: sample ~window~ observations from the
+   training set
+ - Lines [[(kernelP)]] and [[(kernelQ)]]: Compute probabilities of observing
+   event \(s_t\) (see equations \ref{eq:p-est} and \ref{eq:q-est})
+ - Lines [[(llRatio)]]-[[(cusumBound)]]: CUSUM (see equations \ref{eq:logRatios} and \ref{eq:cum-sum})
+
+
+** CUSUM in R (III)
+
+#+BEGIN_SRC R -n -r -l "#(ref:%s)" :session cusum  :tangle src/package/cusum/R/cusum.R :results none
+        df$SnPrime[t] <- (df$Sn[t]-df$Sn[t-window])/window            #(ref:firstDeriv)
+        if (df$SnPrime[t] < slope) {                                  #(ref:slopeTest)
+            df$anomaly[t] <- 0
+        } else {
+            df$anomaly[t] <- 1
+        }
+    }
+    return(df)
+}
+#+END_SRC
+
+ - Line [[(firstDeriv)]]: compute the first derivative of the cumalative
+   sum
+  - The cumulative sum keeps growing
+  - We would like to detect multiple anomalies
+ - Line [[(slopeTest)]]: test whether we should raise an alarm
+
+
+** CUSUM in Action
+
+#+BEGIN_SRC sh :tangle scripts/twoAnomaly1.sh :var resultsDir=resultsDir :exports none :results none
+  awk '
+    func r() {
+      PI = atan2(0, -1);
+      return sqrt(-2.0 * log(rand())) * cos(2.0 * PI * rand())
+    }
+    BEGIN {
+      OFS=",";
+      total=0;
+      for (i=0; i<500; i++) {
+        v=3 + 1.5 * r();
+        total+=v;
+        print "3-1.5", i, v, total, "0";
+      }
+      for (; i<1000; i++) {
+        v=1 + 1.0 * r();
+        total+=v;
+        print "1-1.0", i, v, total, "0";
+      }
+      for (i=0; i<1000; i++) {
+        v=3 + 1.5 * r();
+        total+=v;
+        print "3-1.5", i, v, total, "0";
+      }
+      for (; i<2000; i++) {
+        v=1 + 1.0 * r();
+        total+=v;
+        print "1-1.0", i, v, total, "0";
+      }
+      for (; i<2500; i++) {
+        v=5 + 2.5 * r();
+        total+=v;
+        print "3-1.5", i, v, total, "1";
+      }
+      for (; i<3000; i++) {
+        v=7 + 1.0 * r();
+        total+=v;
+        print "1-1.0", i, v, total, "1";
+      }
+    }' > ${resultsDir}/twoAnomaly_long.csv
+  head -n 1000 ${resultsDir}/twoAnomaly_long.csv > ${resultsDir}/twoAnomaly_long_training.csv
+  tail -n +1001 ${resultsDir}/twoAnomaly_long.csv > ${resultsDir}/twoAnomaly_long_test.csv
+  cat ${resultsDir}/twoAnomaly_long_test.csv > ${resultsDir}/twoAnomaly_long_test2.csv
+  cat ${resultsDir}/twoAnomaly_long_test.csv >> ${resultsDir}/twoAnomaly_long_test2.csv
+#+END_SRC
+
+\begin{center}
+  \begin{tikzpicture}
+    \begin{axis}[
+      set layers,
+      name=ts,
+      width=10cm,
+      cycle list name=linelist,
+      each nth point=20, filter discard warning=false, unbounded coords=discard]
+      \addplot+[only marks] table[col sep=comma,x index=1,y index=2] {data/results/twoAnomaly_long_test2.csv};
+    \end{axis}
+    \begin{axis}[
+      cycle list name=linelist,
+      width=10cm,
+      at={($(ts.south)-(0cm,1cm)$)},anchor=north]
+      \addplot+[highlight style={red3},highlight layer=axis ticks,highlight=2054:3095,highlight=5051:6000] table[col sep=comma,x=t,y=Sn] {data/results/twoAnomaly_long_anomaly.csv};
+    \end{axis}
+  \end{tikzpicture}
+\end{center}
+
+
+* Summary
+
+** Also look at...
+
+ - https://github.com/twitter/AnomalyDetection
+ - https://github.com/twitter/BreakoutDetection
+ - https://github.com/robjhyndman/anomalous-acm
+
+ - These slides and the R package is available at
+  - https://github.com/dahlem/cusum
+
+** Concluding...
+
+ - We can detect anomalies if we can assume stationarity
+  - We modelled \(s_{t}-s_{t-1} \approx P(s_{t}-s_{t-1} \mid c)\)
+ - CUSUM is sequential, so we can do anomaly detection easily in
+   real-time
+ - Types of anomalies
+  - unusual noise
+  - more noise
+  - break down
+  - sudden grow
+  - peaks
+  - no noise
+ - We cannot detect all kinds of anomalies with a single algorithm
+  - use ensembles
+  - handle outliers first?
+
+
+** 
+  :PROPERTIES:
+  :BEAMER_OPT: plain
+  :END:
+
+*** Image					      :BMCOL:
+    :PROPERTIES:
+    :BEAMER_col: 0.35
+    :BEAMER_env: column
+    :END:
+
+#+attr_latex: :height 3cm :float figure
+[[file:images/Boxever_logo_icon.png]]
+
+*** Text 							      :BMCOL:
+    :PROPERTIES:
+    :BEAMER_col: 0.65
+    :END:
+
+*\Large\textcolor{darkblue1}{Boxever}*
+
+*\Huge\textcolor{blue1}{Thank You!}*
+
+\Large\textcolor{blue1}{dominik.dahlem@boxever.com}
+
+
+* Addendum
+  :PROPERTIES:
+  :BEAMER_ENV: appendix
+  :END:
+
+** Misclassification Rate
+
+ - Use this function to compute the classification error between
+   training and test set
+
+#+BEGIN_SRC R -n -r -l "#(ref:%s)" :tangle src/package/cusum/R/classification.error.R :results none
+classification.error <- function(x, training, s, ...) {
+    df <- cusum(x, training, s, ...)
+    return(1.0 - mean(df$anomaly == s$l))
+}
+#+END_SRC
+
+
+** Parameter Tuning
+
+ - We use the CRAN package ~optimx~ to tune the parameters for anomaly
+   detection
+
+#+BEGIN_SRC R -n -r -l "#(ref:%s)" :tangle scripts/optimx.R :results none
+  library(cusum)
+
+  args <- commandArgs(trailingOnly = TRUE)
+
+  training <- read.csv(args[1],
+                      header=F,
+                      col.names=c("c", "t", "s", "tot", "l"),
+                      stringsAsFactors=F)
+  training$s <- as.numeric(training$s)
+
+  s <- read.csv(args[2],
+                header=F,
+                col.names=c("c", "t", "s", "tot", "l"),
+                stringsAsFactors=F)
+  s$s <- as.numeric(s$s)
+
+  window <- as.integer(args[4])
+  slope <- as.integer(args[5])
+
+  error <- optimx(c(window, slope), classification.error, training=training, s=s)
+  print(error)
+#+END_SRC
+
+
+** R Script
+
+ - Use this script to run CUSUM on the command-line
+
+#+BEGIN_SRC R -n -r -l "#(ref:%s)" :tangle scripts/runCusum.R :results none
+  library(cusum)
+
+  args <- commandArgs(trailingOnly = TRUE)
+
+  training <- read.csv(args[1],
+                      header=F,
+                      col.names=c("c", "t", "s", "tot", "l"),
+                      stringsAsFactors=F)
+  training$s <- as.numeric(training$s)
+
+  s <- read.csv(args[2],
+                header=F,
+                col.names=c("c", "t", "s", "tot", "l"),
+                stringsAsFactors=F)
+  s$s <- as.numeric(s$s)
+
+  window <- as.integer(args[4])
+  slope <- as.integer(args[5])
+
+  df <- cusum(c(window, slope), training, s)
+  write.table(df, args[3], row.names=F, sep=",", quote=F)
+#+END_SRC
+
+* Attic								   :noexport:
+** Simulating timeseries
+*** Periodic timeseries
+
+#+BEGIN_SRC sh :tangle scripts/periodicAnomaly.sh :var resultsDir=resultsDir
+  awk '
+    func r(PI) {
+      return sqrt(-2.0 * log(rand())) * cos(2.0 * PI * rand())
+    }
+    BEGIN {
+      PI = atan2(0, -1);
+      OFS=",";
+      for (i=0; i<10; i++) {
+        for (j=0; j<=360; j+=10) {
+          for (k=0; k<500; k++) {
+            rad = j * (PI / 180 );
+            print rad, 1.5 * r(PI), "0";
+          }
+        }
+      }
+      for (i=0; i<2; i++) {
+        for (j=0; j<=360; j+=10) {
+          for (k=0; k<500; k++) {
+            rad = j * (PI / 180 );
+            print rad, 1.0 * r(PI), "1";
+          }
+        }
+      }
+    }' > ${resultsDir}/periodicAnomaly.csv
+  head -n 92500 ${resultsDir}/periodicAnomaly.csv > ${resultsDir}/periodicAnomaly_training.csv
+  tail -n +92501 ${resultsDir}/periodicAnomaly.csv > ${resultsDir}/periodicAnomaly_test.csv
+  cat ${resultsDir}/periodicAnomaly_test.csv > ${resultsDir}/periodicAnomaly_test2.csv
+  cat ${resultsDir}/periodicAnomaly_test.csv >> ${resultsDir}/periodicAnomaly_test2.csv
+#+END_SRC
+
+#+RESULTS:
+
+

@@ -1,0 +1,46 @@
+# -*- org-export-babel-evaluate: nil -*- 
+# -*- org-confirm-babel-evaluate: nil -*- 
+#+TITLE:     An Introduction into Anomaly Detection
+#+AUTHOR:    Dominik Dahlem
+#+EMAIL:     dominik.dahlem@boxever.com
+#+DATE:      2015-10-27 Tue
+#+LANGUAGE:  en
+
+* Introduction
+
+This project gives a high-level overview of anomaly detection in
+timeseries data and provides a basic implementation of the cumulative
+sum (CUSUM) algorithm in R. CUSUM relies on stationarity assumptions
+of the timeseries, which constraints its use to real-world problems
+somewhat. However, timeseries data can often be annotated, such that
+piece-wise stationarity holds. For example, we could divide the
+timeseries into hourly buckets where stationarity assumptions hold
+with respect to these buckets.
+
+This introduction was presented to an R meetup in Dublin. The [[file:anomaly.org][slides]]
+are available in the org-mode format and can be exported to a
+latex-beamer presentation. All required packages are part of the
+latest TexLive distribution. I tested the PDF creation with luatex and
+biber for the bibliography.
+
+
+* Installation
+
+** Dependencies
+The R implementation relies on a /k/-nearest neighbour algorithm from
+the *FNN* library. The *optimx* package is used to tune the anomaly
+detection algorithm on a particular data set. Otherwise, no further
+packages are required to run the scripts.
+
+ - Open an R session
+ - Type ~install.packages(c("FNN", "optimx"), dependencies=T)~ to
+   install the required packages
+
+** CUSUM package
+
+You can tangle the workflow in [[file:anomaly.org]] first in order to
+create the R package structure. Before proceeding with the workflow,
+install the ~cusum~ R package:
+
+ - ~cd src/package~
+ - ~R CMD INSTALL cusum~
