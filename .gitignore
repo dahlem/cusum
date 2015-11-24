@@ -1,0 +1,13 @@
+*.vrb
+*.log
+*.out
+*.aux
+*.bcf
+*.nav
+*.run.xml
+*.snm
+*.toc
+*.swp
+anomaly.tex
+auto/
+_minted-anomaly/
