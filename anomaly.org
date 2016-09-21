@@ -5,6 +5,11 @@
 #+EMAIL:     dominik.dahlem@boxever.com
 #+DATE:      2015-11-24 Tue
 #+LANGUAGE:  en
+#+TAGS:      Anomaly Detection, CUSUM
+#+CATEGORY:  Analytics
+#+DESCRIPTION: This article provides an overview of a simple anomaly detection approach using the cumulative sum of log-likelihood ratios.
+#+ATTR_WP: :syntaxhl
+#+POSTID: 4
 #+STARTUP: beamer
 #+STARTUP: oddeven
 #+SELECT_TAGS: export
@@ -232,18 +237,14 @@ This org file documents the entirety of the anomaly detection
 workflow. The following sections provide the source-code snippets in
 various programming languages to accomplish this.
 
-You can tangle the workflow first in order to create the R package
-structure. Before proceeding with the workflow, install the ~cusum~ R
-package:
-
- - ~cd src/package~
- - ~R CMD INSTALL cusum~
+First set the variables in the following section and then tangle the
+babel source snippets in order to get the R package structure.
 
 ** Variable Declarations
-You can re-run this subtree by executing
-`org-babel-execute-subtree'. Change the code below to get directories
-depending on who you are. Also, you can run the command
-`org-babel-execute-subtree' with C-c C-v s.
+You can re-run this subtree by executing `org-babel-execute-subtree'
+in order to set the variables to your environment. Change the code
+below to get directories depending on who you are. Also, you can run
+the command `org-babel-execute-subtree' with C-c C-v s.
 
 *** Directories
 
@@ -254,17 +255,11 @@ Let's set up the directories we will be using.
   pwd
 #+END_SRC
 
-#+RESULTS: baseDir
-: /Users/dominikdahlem/Documents/meetup/R/anomaly
-
 
 #+name: dataDir
 #+begin_src sh :var baseDir=baseDir
 echo ${baseDir}/data
 #+end_src
-
-#+RESULTS: dataDir
-: /Users/dominikdahlem/Documents/meetup/R/anomaly/data
 
 
 #+name: scriptsDir
@@ -272,26 +267,17 @@ echo ${baseDir}/data
 echo ${baseDir}/scripts
 #+end_src
 
-#+RESULTS: scriptsDir
-: /Users/dominikdahlem/Documents/meetup/R/anomaly/scripts
-
 
 #+name: resultsDir
 #+begin_src sh :var dataDir=dataDir
 echo ${dataDir}/results
 #+end_src
 
-#+RESULTS: resultsDir
-: /Users/dominikdahlem/Documents/meetup/R/anomaly/data/results
-
 
 #+name: packageDir
 #+begin_src sh :var baseDir=baseDir
 echo ${baseDir}/src/package/cusum/R
 #+end_src
-
-#+RESULTS: packageDir
-: /Users/dominikdahlem/Documents/meetup/R/anomaly/src/package/cusum/R
 
 
 We create all directories, which we only need to do when we set up the
@@ -304,6 +290,14 @@ project.
 #+END_SRC
 
 
+
+** Run workflow
+You can tangle the workflow first in order to create the R package
+structure (`org-babel-tangle' with C-c C-v t). Before proceeding with
+the workflow, install the ~cusum~ R package:
+
+ - ~cd src/package~
+ - ~R CMD INSTALL cusum~
 
 * R Package Setup						   :noexport:
 
@@ -328,6 +322,7 @@ Since R 3.0, we also need a namespace file.
 exportPattern( "." )
 #+END_SRC
 
+
 * Introduction
 
 ** Who am I?
@@ -337,6 +332,7 @@ exportPattern( "." )
   - \faGithub :: http://github.com/dahlem
   - \faTwitter :: @dahlemd
  
+
 ** Anomaly Creation
   :PROPERTIES:
   :BEAMER_OPT: fragile
@@ -824,6 +820,7 @@ classification.error <- function(x, training, s, ...) {
   df <- cusum(c(window, slope), training, s)
   write.table(df, args[3], row.names=F, sep=",", quote=F)
 #+END_SRC
+
 
 * Attic								   :noexport:
 ** Simulating timeseries
